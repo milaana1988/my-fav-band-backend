@@ -5,21 +5,17 @@ from pydantic import BaseModel
 import os
 from dotenv import load_dotenv
 from fastapi.middleware.cors import CORSMiddleware
+from firebase_admin import credentials, firestore
 import firebase_admin
-from firebase_admin import credentials, firestore, storage
 
 load_dotenv()
 
 # Initialize Firebase Admin SDK
 cred = credentials.Certificate("./firebase_credentials.json")
-firebase_admin.initialize_app(cred, {
-    'storageBucket': 'your-project-id.appspot.com'  # Replace with your Firebase bucket name
-})
+firebase_admin.initialize_app(cred)
 
 # Firestore and Storage Clients
 db = firestore.client()
-bucket = storage.bucket()
-
 
 app = FastAPI()
 
@@ -117,16 +113,10 @@ async def generate_photo(request: GenerateRequest):
             input=input_data
         )
 
-        # Save the image and store the file path
-        image_paths = []
-        for index, item in enumerate(output):
-            image_path = f"output_{index}.png"
-            with open(image_path, "wb") as file:
-                file.write(item.read())
-            image_paths.append(image_path)
+        image_url = output[0].url
 
         # Return the image paths in the response
-        return {"data": image_paths[0]}
+        return {"data": image_url}
 
     except Exception as e:
         return {"error": str(e)}
